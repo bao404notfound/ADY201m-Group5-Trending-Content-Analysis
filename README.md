@@ -27,18 +27,18 @@ Subsequently, the project trains Machine Learning models to predict viral potent
 ## RESEARCH HYPOTHESIS
 ### RQ1: Timing (Publishing Time)
 * **Research Question:** Does publishing a video during peak hours (18:00 - 22:00) significantly impact the speed at which it appears on the Trending tab compared to other time slots?
-  * **$H_0$:**
-  * **$H_1$:** 
-
+  * **$H_0$:** Null Hypothesis (H0): The time of posting a video (prime hours 6 PM-10 PM compared to other times) does not significantly affect how quickly the video appears on the Trending tab.
+  * **$H_1$:** Alternative Hypothesis (H1): Posting a video during prime hours (6 PM-10 PM) has a positive effect, helping the video appear on the Trending tab faster than posting at other times of the day. 
+ 
 ### RQ2: Engagement & Sentiment (Negative Interactions)
 * **Research Question:** Do negative comments and high dislike rates reduce a video's virality and shorten its retention time on the Trending tab?
-  * **$H_0$:** 
-  * **$H_1$:**
+  * **$H_0$:** Null Hypothesis (H0): The number of negative comments and the dislike ratio do not have a negative effect or reduce the time a video stays on the Trending tab.
+  * **$H_1$:** Alternative Hypothesis (H1): The number of negative comments and dislike ratio have a negative impact, reducing a video's virality and significantly shortening the time it remains on the Trending tab.
 
 ### RQ3: Content & Title (Clickbait Titles)
 * **Research Question:** Does using sensational or clickbait titles (all caps, strong keywords, short length) increase average view counts in the first 48 hours compared to standard titles?
-  * **$H_0$:** 
-  * **$H_1$:**
+  * **$H_0$:** Null hypothesis (H0): Using curiosity-inducing (clickbait) titles does not create a statistically significant difference in the average views during the first 48 hours compared to videos with regular titles.
+  * **$H_1$:**  Alternative hypothesis (H1): Using curiosity-inducing (clickbait) titles creates a noticeable difference (specifically, a significantly higher average view count) in the first 48 hours compared to videos with regular titles.
   
 -----------------------------
 
