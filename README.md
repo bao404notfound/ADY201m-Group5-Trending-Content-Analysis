@@ -43,3 +43,42 @@ Subsequently, the project trains Machine Learning models to predict viral potent
 -----------------------------
 
 ## SYSTEM ARCHITECTURE 
+### Docker Architecture Overview
+The system is designed as a containerized data pipeline for collecting, storing, processing, and analyzing YouTube Trending Content.
+
+The overall data flow follows:
+
+YouTube Data API → Python Crawler → MinIO → Database → App / Workstation
+
+YouTube Data API is an external data source, while the main system components are deployed as independent Docker containers. Each container is responsible for a specific stage of the data pipeline, allowing the system to maintain clear separation of responsibilities and a consistent development environment across team members.
+
+### System Components
+- YouTube Data API (External Service):	Provides YouTube video and trending-content data.
+- Python Crawler	(Docker Container):	Collects data from the YouTube Data API.
+- MinIO	(Docker Container):	Stores raw data as the Raw Data Lake.
+- Database	(Docker Container):	Stores processed and structured data.
+- App / Workstation	(Docker Container):	Performs data processing, analysis, and visualization.
+
+### Data Flow
+The data flows through the system in the following stages:
+1. Data Source — YouTube Data API provides video-related metadata such as video ID, channel ID, title, published time, view count, like count, and comment count.
+2. Data Ingestion — The Python Crawler sends API requests to YouTube Data API, receives the data, and transfers the collected raw data to MinIO.
+3. Raw Data Storage — MinIO acts as the Raw Data Lake and preserves the original collected data before further processing.
+4. Data Processing & Structured Storage — Raw data from MinIO is processed through the data processing/ETL stage and stored in the Database as structured data.
+5. Analysis — The App / Workstation accesses structured data from the Database for further processing, analysis, and visualization.
+
+### Technologies
+- Python:	Data collection, data processing, and analysis
+- YouTube Data API:	Provides YouTube video and trending-content data
+- Docker:	Containerizes the system components and provides a consistent development environment
+- MinIO:	Provides object storage and serves as the Raw Data Lake
+- Database:	Stores processed and structured data for querying and analysis
+- Matplotlib:	Data visualization and chart generation
+- Seaborn:	Statistical data visualization and distribution analysis
+- Git & GitHub:	Version control and collaboration among team members
+
+### Architecture Rationale
+
+The architecture separates data ingestion, raw data storage, structured data storage, and analysis into independent components. This separation makes the system easier to maintain and allows individual components to be modified or extended without redesigning the entire pipeline.
+
+Using MinIO as the Raw Data Lake preserves the original collected data, while the Database provides structured data for efficient querying and analysis. Docker ensures that the main services can run in consistent and reproducible environments across different machines.
