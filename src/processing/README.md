@@ -12,4 +12,3 @@ This folder contains scripts and modules used to clean, transform, and process t
 ## Planned Components
 - 'cleaner.py' - Data cleaning and preprocessing
 - Additional processing modules will be added as the project develops.
-hello
