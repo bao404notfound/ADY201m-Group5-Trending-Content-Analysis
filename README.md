@@ -43,14 +43,17 @@ Subsequently, the project trains Machine Learning models to predict viral potent
 -----------------------------
 
 ## SYSTEM ARCHITECTURE 
-### Docker Architecture Overview
-The system is designed as a containerized data pipeline for collecting, storing, processing, and analyzing YouTube Trending Content.
+### Docker Architecture
+The project uses a Docker-based architecture for data ingestion, storage, processing, and analysis of YouTube Trending Content.
 
 The overall data flow follows:
 
 YouTube Data API → Python Crawler → MinIO → Database → App / Workstation
 
 YouTube Data API is an external data source, while the main system components are deployed as independent Docker containers. Each container is responsible for a specific stage of the data pipeline, allowing the system to maintain clear separation of responsibilities and a consistent development environment across team members.
+
+For more details, see the
+[Docker Architecture Documentation](docs/docker-architecture.md).
 
 ### System Components
 - YouTube Data API (External Service):	Provides YouTube video and trending-content data.
