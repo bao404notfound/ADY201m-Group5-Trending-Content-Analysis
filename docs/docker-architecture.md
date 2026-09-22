@@ -100,19 +100,7 @@ Container through API requests.
 
 The internal data flow is:
 
-Python Crawler
-      |
-      v
-    MinIO
-      |
-      v
-Data Processing / ETL
-      |
-      v
-  Database
-      |
-      v
-App / Workstation
+Python Crawler -> MinIO -> Data Processing / ETL -> Database -> App / Workstation
 
 ## 6. Benefits of the Docker Architecture
 Using Docker provides several benefits for the project:
