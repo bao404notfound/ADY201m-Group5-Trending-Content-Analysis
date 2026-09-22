@@ -100,7 +100,6 @@ Container through API requests.
 
 The internal data flow is:
 
-```text
 Python Crawler
       |
       v
