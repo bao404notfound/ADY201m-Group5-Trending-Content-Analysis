@@ -11,12 +11,16 @@ import time
 SEARCH_QUERIES = [
     # Music
     "music",
-    "new music",
+    "chill music",
     "music video",
     "live music",
     "song",
     "concert",
     "karaoke",
+    "cover song",
+    "instrumental",
+    "remix music",
+    "rock music",
 
     # Entertainment
     "movie",
@@ -25,7 +29,8 @@ SEARCH_QUERIES = [
     "tv show",
     "celebrity",
     "comedy",
-    "funny",
+    "game show",
+    "reality show",
 
     # Technology
     "technology",
@@ -37,15 +42,25 @@ SEARCH_QUERIES = [
     "computer",
     "smartphone",
     "laptop",
+    "automobile",
+    "robotics",
+    "drone",
 
     # Gaming
     "gaming",
-    "gameplay",
-    "Minecraft",
-    "Roblox",
-    "GTA",
-    "Fortnite",
+    "game",
+    "Free Fire",
+    "Mobile Legends",
+    "MLBB",
+    "Delta Force",
     "esports",
+    "FC Mobile",
+    "PUBG",
+    "Area of Valor",
+    "Mini World",
+    "Dota 2",
+    "Black Myth Wukong",
+    "Genshin Impact",
 
     # Sports
     "sports",
@@ -53,8 +68,17 @@ SEARCH_QUERIES = [
     "soccer",
     "basketball",
     "tennis",
-    "F1",
+    "baseball",
     "UFC",
+    "boxing",
+    "cricket",
+    "Olympics",
+    "athletics",
+    "swimming",
+    "cycling",
+    "gymnastics",
+    "volleyball",
+    "World Cup",
 
     # Education
     "education",
@@ -65,6 +89,14 @@ SEARCH_QUERIES = [
     "study",
     "science",
     "math",
+    "history",
+    "language",
+    "psychology",
+    "philosophy",
+    "economics",
+    "sociology",
+    "biology",
+    "chemistry",
 
     # Lifestyle
     "vlog",
@@ -76,6 +108,9 @@ SEARCH_QUERIES = [
     "workout",
     "fashion",
     "beauty",
+    "lifestyle",
+    "health",
+    "wellness",
 
     # News / information
     "news",
@@ -84,6 +119,10 @@ SEARCH_QUERIES = [
     "business",
     "finance",
     "economics",
+    "weather",
+    "breaking news",
+    "current events",
+    "investigation",
 
     # Other
     "podcast",
@@ -95,6 +134,7 @@ SEARCH_QUERIES = [
     "DIY",
     "car",
     "motorcycle",
+    "manga",
 ]
 
 TARGET_PER_QUERY = 600
@@ -308,7 +348,7 @@ def main():
                 f"[CHECKPOINT SAVED] "
                 f"{output}"
             )
-            time.sleep(6)
+            time.sleep(5)
 
     # --------------------------------------------------------
     # Final
