@@ -61,6 +61,7 @@ SEARCH_QUERIES = [
     "Dota 2",
     "Black Myth Wukong",
     "Genshin Impact",
+    "Plants vs Zombies",
 
     # Sports
     "sports",
