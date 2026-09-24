@@ -77,7 +77,6 @@ The data flows through the system in the following stages:
 - MinIO:	Provides object storage and serves as the Raw Data Lake
 - Database:	Stores processed and structured data for querying and analysis
 - Jupyter Notebook:	Data exploration, processing, and analysis
-- RStudio:	Statistical analysis and data distribution visualization
 - Matplotlib:	Data visualization and chart generation
 - Seaborn:	Statistical data visualization and distribution analysis
 - Git & GitHub:	Version control and collaboration among team members
