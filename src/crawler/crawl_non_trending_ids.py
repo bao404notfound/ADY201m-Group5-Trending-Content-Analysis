@@ -307,8 +307,8 @@ def main():
             print(
                 f"[CHECKPOINT SAVED] "
                 f"{output}"
-                time.sleep(6)
             )
+            time.sleep(6)
 
     # --------------------------------------------------------
     # Final
