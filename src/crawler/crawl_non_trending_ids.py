@@ -142,7 +142,7 @@ TARGET_PER_QUERY = 600
 
 OUTPUT_FILE = (
     "data/raw/youtube/non_trending/"
-    "candidate_ids.parquet"
+    "candidate_ids_parallel.parquet"
 )
 
 
@@ -256,7 +256,7 @@ def main():
             schema={
                 "video_id": pl.String,
                 "search_query": pl.String,
-                "is_trending": pl.Int8,
+                "is_trending": pl.Int64,
                 "source": pl.String,
             }
         )
@@ -325,22 +325,33 @@ def main():
         # ----------------------------------------------------
 
         if new_rows:
-
             new_df = pl.DataFrame(
-                new_rows
+                new_rows,
+                schema={
+                    "video_id": pl.String,
+                    "search_query": pl.String,
+                    "is_trending": pl.Int64,
+                    "source": pl.String,
+                },
+                orient="row",
+            )
+
+            existing = existing.with_columns(
+                pl.col("is_trending").cast(pl.Int64)
+            )
+
+            new_df = new_df.with_columns(
+                pl.col("is_trending").cast(pl.Int64)
             )
 
             existing = pl.concat(
-                [
-                    existing,
-                    new_df
-                ],
-                how="vertical"
+                [existing, new_df],
+                how="vertical",
             )
 
             existing.write_parquet(
                 output,
-                compression="zstd"
+                compression="zstd",
             )
 
             new_rows = []
