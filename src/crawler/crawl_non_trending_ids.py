@@ -10,17 +10,15 @@ import time
 
 SEARCH_QUERIES = [
     # Music
-    "music",
     "chill music",
     "music video",
-    "live music",
     "song",
     "concert",
     "karaoke",
     "cover song",
     "instrumental",
     "remix music",
-    "rock music",
+    
 
     # Entertainment
     "movie",
@@ -34,11 +32,8 @@ SEARCH_QUERIES = [
 
     # Technology
     "technology",
-    "tech",
-    "AI",
     "artificial intelligence",
     "programming",
-    "Python",
     "computer",
     "smartphone",
     "laptop",
@@ -47,15 +42,12 @@ SEARCH_QUERIES = [
     "drone",
 
     # Gaming
-    "gaming",
     "game",
     "Free Fire",
     "Mobile Legends",
-    "MLBB",
     "Delta Force",
     "esports",
     "FC Mobile",
-    "PUBG",
     "Area of Valor",
     "Mini World",
     "Dota 2",
@@ -66,8 +58,6 @@ SEARCH_QUERIES = [
     # Sports
     "sports",
     "football",
-    "soccer",
-    "basketball",
     "tennis",
     "baseball",
     "UFC",
@@ -101,7 +91,6 @@ SEARCH_QUERIES = [
 
     # Lifestyle
     "vlog",
-    "daily vlog",
     "travel",
     "food",
     "cooking",
@@ -122,8 +111,6 @@ SEARCH_QUERIES = [
     "economics",
     "weather",
     "breaking news",
-    "current events",
-    "investigation",
 
     # Other
     "podcast",
