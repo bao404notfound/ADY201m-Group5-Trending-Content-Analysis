@@ -37,7 +37,6 @@ CATEGORIES = {
     "1": "Film & Animation",
     "28": "Science & Technology",
     "17": "Sports",
-    "19": "Travel & Events",
     "20": "Gaming",
     "25": "News & Politics"
 }
