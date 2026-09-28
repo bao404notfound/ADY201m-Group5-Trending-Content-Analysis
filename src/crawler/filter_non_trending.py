@@ -9,7 +9,7 @@ TRENDING_FILE = (
 
 CANDIDATE_FILE = (
     "data/raw/youtube/non_trending/"
-    "candidate_ids.parquet"
+    "candidate_ids_parallel.parquet"
 )
 
 OUTPUT_FILE = (
