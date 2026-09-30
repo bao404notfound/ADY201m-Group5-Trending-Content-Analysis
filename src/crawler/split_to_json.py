@@ -136,7 +136,8 @@ def main() -> None:
     exported_records = 0
 
     for chunk_index, start in enumerate(
-        range(0, total_records, CHUNK_SIZE)
+        range(0, total_records, CHUNK_SIZE),
+        start=1,
     ):
 
         end = min(
