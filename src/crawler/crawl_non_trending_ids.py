@@ -18,6 +18,7 @@ SEARCH_QUERIES = [
     "bolero song",
     "instrumental",
     "phonk music",
+    "K-pop",
     
 
     # Entertainment
@@ -47,6 +48,7 @@ SEARCH_QUERIES = [
     "Legends of Zelda",
     "Genshin Impact",
     "Plants vs Zombies",
+    "FC Mobile",
 
     # Sports
     "sports",
@@ -55,6 +57,7 @@ SEARCH_QUERIES = [
     "kickboxing",
     "basketball",
     "tennis",
+    "American Football",
 
     # Education
     "tutorial",
@@ -303,7 +306,7 @@ def main():
                     existing,
                     new_df
                 ],
-                how="vertical"
+                how="vertical_relaxed"
             )
 
             existing.write_parquet(
