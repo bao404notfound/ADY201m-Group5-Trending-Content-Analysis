@@ -91,11 +91,13 @@ OUTPUT_FILE = (
 
 def search_youtube(query, limit):
 
-    print(f"\n[SEARCH] {query}")
+    # Append 2026 to query to bias towards recent videos
+    actual_query = f"{query} 2026"
+    print(f"\n[SEARCH] {actual_query}")
 
     command = [
         "yt-dlp",
-        f"ytsearch{limit}:{query}",
+        f"ytsearch{limit}:{actual_query}",
         "--flat-playlist",
         "--print",
         "%(id)s",

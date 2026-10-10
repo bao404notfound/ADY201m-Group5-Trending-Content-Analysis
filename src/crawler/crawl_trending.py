@@ -19,7 +19,7 @@ API_KEY = os.getenv("YOUTUBE_API_KEY")
 if not API_KEY:
     raise ValueError("YOUTUBE_API_KEY not found in .env")
 
-REGIONS = ["VN", "US", "KR", "JP", "GB"]
+REGIONS = ["VN", "KR", "JP", "ID", "IN", "TH"]
 
 CATEGORIES = {
     "10": "Music",
