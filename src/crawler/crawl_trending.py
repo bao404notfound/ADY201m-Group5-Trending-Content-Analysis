@@ -1,5 +1,6 @@
 import os
 import time
+from datetime import datetime
 from pathlib import Path
 
 import polars as pl
@@ -23,13 +24,7 @@ if not API_KEY:
     )
 
 
-REGIONS = [
-    "VN",
-    "US",
-    "KR",
-    "JP",
-    "GB"
-]
+REGIONS = ["US", "GB", "DE", "BR"]
 
 
 CATEGORIES = {
@@ -37,7 +32,7 @@ CATEGORIES = {
     "1": "Film & Animation",
     "28": "Science & Technology",
     "17": "Sports",
-    "19": "Travel & Events",
+    #"19": "Travel & Events",
     "20": "Gaming",
     "25": "News & Politics"
 }
@@ -283,9 +278,11 @@ def main():
         df.height
     )
 
+    # Đã sửa: Gắn timestamp vào tên file để không bị ghi đè dữ liệu cũ
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output = (
         OUTPUT_DIR /
-        "trending_raw.parquet"
+        f"trending_{timestamp}.parquet"
     )
 
     df.write_parquet(
