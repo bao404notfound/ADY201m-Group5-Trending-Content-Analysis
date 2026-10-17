@@ -1,5 +1,4 @@
 import os
-import requests
 from pathlib import Path
 
 import polars as pl
@@ -48,16 +47,7 @@ youtube = build(
 # ============================================================
 # HELPERS
 # ============================================================
-def get_video_dislikes(video_id):
-    url = f"https://returnyoutubedislikeapi.com/votes?videoId={video_id}"
-    try:
-        response = requests.get(url, timeout=5)
-        if response.status_code == 200:
-            data = response.json()
-            return data.get("dislikes", 0)
-    except Exception:
-        pass
-    return 0
+
 
 def chunks(items, size=50):
 
@@ -236,11 +226,7 @@ def main():
                         )
                     ),
                     
-                "dislike_count": int(
-                    get_video_dislikes(
-                        item["id"]
-                    )
-                ),
+            
 
                 "comment_count":
                     int(
