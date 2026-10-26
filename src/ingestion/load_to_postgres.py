@@ -186,7 +186,13 @@ def main():
     print(f"Chuẩn bị nạp {df_dim_new.height} videos mới vào dim_video.")
 
     print("\nBƯỚC 3: TÁCH VÀ XỬ LÝ BẢNG FACT (fact_youtube_metrics)...")
-    df_fact = df_raw.with_columns(pl.lit(False).alias("is_trending")).select([
+    # Lấy luôn cột is_trending từ data gốc, nếu file nào lỡ thiếu thì mặc định là False
+    if "is_trending" not in df_raw.columns:
+        df_raw = df_raw.with_columns(pl.lit(False).alias("is_trending"))
+    else:
+        df_raw = df_raw.with_columns(pl.col("is_trending").cast(pl.Boolean).fill_null(False))
+
+    df_fact = df_raw.select([
         "video_id", "crawled_at", "view_count", "like_count", 
         "comment_count", "is_trending"
     ])
