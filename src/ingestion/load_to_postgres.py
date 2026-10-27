@@ -2,6 +2,7 @@ import polars as pl
 import sys
 import random
 from datetime import datetime, timedelta
+import re
 
 # ==========================================
 # 1. CẤU HÌNH KẾT NỐI
@@ -59,18 +60,24 @@ def load_all_parquets():
         dfs = []
         for file_path in file_list:
             try:
+                # 1. ĐỌC FILE LÊN TRƯỚC
                 df_single = pl.read_parquet(
                     file_path, 
                     storage_options=MINIO_STORAGE_OPTIONS,
                     hive_partitioning=False
                 )
                 
-                # ==========================================
-                # TẨY MÚI GIỜ (TIMEZONE) CHO TẤT CẢ CỘT DATETIME
-                # ==========================================
+                # 2. XỬ LÝ REGEX ĐỂ MÓC REGION TỪ ĐƯỜNG DẪN NGAY SAU KHI ĐỌC
+                import re # Import thư viện nội bộ
+                match = re.search(r'/([A-Z]{2})/', file_path)
+                if match:
+                    real_region = match.group(1)
+                    # Gán giá trị region (US, GB, BR...) vào Dataframe vừa đọc
+                    df_single = df_single.with_columns(pl.lit(real_region).alias("region"))
+                
+                # 3. TẨY MÚI GIỜ (TIMEZONE)
                 for col_name, dtype in df_single.schema.items():
                     if isinstance(dtype, pl.Datetime):
-                        # Gọt bỏ timezone để đưa về chuẩn datetime[μs] chung
                         df_single = df_single.with_columns(
                             pl.col(col_name).dt.replace_time_zone(None)
                         )
@@ -105,14 +112,20 @@ def main():
         if "channelTitle" in df_raw.columns:
             df_raw = df_raw.rename({"channelTitle": "channel_title"})
 
-        # Xử lý ép kiểu Datetime
+        # ==========================================
+        # 1. FIX ÉP KIỂU DATETIME (Đa định dạng chống rớt Null)
+        # ==========================================
         if "publish_at" in df_raw.columns and df_raw.schema["publish_at"] == pl.Utf8:
             df_raw = df_raw.with_columns(
-                pl.col("publish_at").str.strptime(pl.Datetime, "%Y-%m-%dT%H:%M:%SZ", strict=False)
+                pl.coalesce([
+                    pl.col("publish_at").str.strptime(pl.Datetime, "%Y-%m-%dT%H:%M:%SZ", strict=False),
+                    pl.col("publish_at").str.strptime(pl.Datetime, "%Y-%m-%dT%H:%M:%S.%.fZ", strict=False),
+                    pl.col("publish_at").str.strptime(pl.Datetime, "%Y-%m-%d %H:%M:%S", strict=False)
+                ]).alias("publish_at")
             )
 
         # ==========================================
-        # GIẢI QUYẾT TRIỆT ĐỂ VỤ CATEGORY (GỘP THÀNH 6 NHÓM)
+        # 2. GIẢI QUYẾT TRIỆT ĐỂ VỤ CATEGORY (GỘP THÀNH 6 NHÓM)
         # ==========================================
         ORIGINAL_MAPPING = {
             "1": "Film & Animation", "2": "Autos & Vehicles", "10": "Music", 
@@ -151,6 +164,31 @@ def main():
         )
 
         # ==========================================
+        # 3. FIX CỨNG THỂ LOẠI BẰNG TỪ KHÓA (Keyword Override)
+        # ==========================================
+        if "title" in df_raw.columns:
+            df_raw = df_raw.with_columns(
+                pl.when(pl.col("title").str.to_lowercase().str.contains("phim|movie|tập phim|kinh dị|hoạt hình"))
+                .then(pl.lit("Film & Animation"))
+                .when(pl.col("title").str.to_lowercase().str.contains("nhạc|remix|mv|lofi|bolero|karaoke|bass"))
+                .then(pl.lit("Music"))
+                .otherwise(pl.col("category_name"))
+                .alias("category_name")
+            )
+
+        # ==========================================
+        # 4. FIX REGION NULL VÀ CHÈN CÁC CỘT THIẾU
+        # ==========================================
+        for col in ["channel_title", "channel_id", "region"]:
+            if col not in df_raw.columns:
+                # Nếu là cột region thì điền UN, các cột khác điền Unknown
+                default_val = "UN" if col == "region" else "Unknown"
+                df_raw = df_raw.with_columns(pl.lit(default_val).cast(pl.Utf8).alias(col))
+            else:
+                default_val = "UN" if col == "region" else "Unknown"
+                df_raw = df_raw.with_columns(pl.col(col).fill_null(default_val))
+
+        # ==========================================
         # XỬ LÝ CRAWLED_AT DỰA TRÊN NGÀY PUBLISH
         # ==========================================
         if "crawled_at" not in df_raw.columns:
@@ -160,21 +198,19 @@ def main():
         elif df_raw.schema["crawled_at"] == pl.Utf8:
             df_raw = df_raw.with_columns(pl.col("crawled_at").str.strptime(pl.Datetime, strict=False))
 
-        # Tự động điền NULL nếu data thô thiếu các cột
-        for col in ["channel_title", "channel_id", "region"]:
-            if col not in df_raw.columns:
-                df_raw = df_raw.with_columns(pl.lit(None).cast(pl.Utf8).alias(col))
-                
         print(f"Đã nạp và lọc sơ bộ {df_raw.height} records hợp lệ từ Data Lake.")
     except Exception as e:
         print(f"Lỗi hệ thống trong Bước 1: {e}")
         sys.exit(1)
 
     print("\nBƯỚC 2: TÁCH VÀ XỬ LÝ BẢNG DIMENSION (dim_video)...")
-    df_dim_new = df_raw.select([
-        "video_id", "title", "category_name", "channel_title", 
-        "channel_id", "region", "publish_at", "time_block"
-    ]).unique(subset=["video_id"], keep="last")
+    
+    # Kiểm tra xem time_block có tồn tại không trước khi select
+    dim_cols = ["video_id", "title", "category_name", "channel_title", "channel_id", "region", "publish_at"]
+    if "time_block" in df_raw.columns:
+        dim_cols.append("time_block")
+        
+    df_dim_new = df_raw.select(dim_cols).unique(subset=["video_id"], keep="last")
 
     try:
         df_dim_existing = pl.read_database("SELECT video_id FROM dim_video", PG_URI)
