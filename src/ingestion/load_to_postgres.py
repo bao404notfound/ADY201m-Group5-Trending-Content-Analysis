@@ -41,7 +41,7 @@ def simulate_crawled_at(pub_date):
 def load_all_parquets():
     """
     Nạp dữ liệu mượt mà bằng s3fs, dùng diagonal concat để vá schema bị lệch.
-    Đã bổ sung bộ lọc "tẩy" Timezone để tránh xung đột khi gộp file.
+    Đã bổ sung bộ lọc "tẩy" Timezone và rút trích mã Region trực tiếp từ đường dẫn file.
     """
     try:
         import s3fs
@@ -68,14 +68,13 @@ def load_all_parquets():
                 )
                 
                 # 2. XỬ LÝ REGEX ĐỂ MÓC REGION TỪ ĐƯỜNG DẪN NGAY SAU KHI ĐỌC
-                import re # Import thư viện nội bộ
                 match = re.search(r'/([A-Z]{2})/', file_path)
                 if match:
                     real_region = match.group(1)
                     # Gán giá trị region (US, GB, BR...) vào Dataframe vừa đọc
                     df_single = df_single.with_columns(pl.lit(real_region).alias("region"))
                 
-                # 3. TẨY MÚI GIỜ (TIMEZONE)
+                # 3. TẨY MÚI GIỜ (TIMEZONE) CHO TẤT CẢ CỘT DATETIME
                 for col_name, dtype in df_single.schema.items():
                     if isinstance(dtype, pl.Datetime):
                         df_single = df_single.with_columns(
@@ -181,7 +180,6 @@ def main():
         # ==========================================
         for col in ["channel_title", "channel_id", "region"]:
             if col not in df_raw.columns:
-                # Nếu là cột region thì điền UN, các cột khác điền Unknown
                 default_val = "UN" if col == "region" else "Unknown"
                 df_raw = df_raw.with_columns(pl.lit(default_val).cast(pl.Utf8).alias(col))
             else:
@@ -189,14 +187,31 @@ def main():
                 df_raw = df_raw.with_columns(pl.col(col).fill_null(default_val))
 
         # ==========================================
-        # XỬ LÝ CRAWLED_AT DỰA TRÊN NGÀY PUBLISH
+        # 5. XỬ LÝ CRAWLED_AT DỰA TRÊN NGÀY PUBLISH
         # ==========================================
         if "crawled_at" not in df_raw.columns:
-            df_raw = df_raw.with_columns(
-                pl.col("publish_at").map_elements(simulate_crawled_at, return_dtype=pl.Datetime).alias("crawled_at")
-            )
+            df_raw = df_raw.with_columns(pl.lit(None).cast(pl.Datetime).alias("crawled_at"))
         elif df_raw.schema["crawled_at"] == pl.Utf8:
-            df_raw = df_raw.with_columns(pl.col("crawled_at").str.strptime(pl.Datetime, strict=False))
+            df_raw = df_raw.with_columns(
+                pl.coalesce([
+                    pl.col("crawled_at").str.strptime(pl.Datetime, "%Y-%m-%dT%H:%M:%SZ", strict=False),
+                    pl.col("crawled_at").str.strptime(pl.Datetime, "%Y-%m-%dT%H:%M:%S.%.fZ", strict=False),
+                    pl.col("crawled_at").str.strptime(pl.Datetime, "%Y-%m-%d %H:%M:%S", strict=False)
+                ]).alias("crawled_at")
+            )
+
+        # BẮT BUỘC skip_nulls=False để ép Polars chạy hàm simulate ngay cả khi publish_at bị NULL
+        df_raw = df_raw.with_columns(
+            pl.when(pl.col("crawled_at").is_null())
+            .then(pl.col("publish_at").map_elements(simulate_crawled_at, return_dtype=pl.Datetime, skip_nulls=False))
+            .otherwise(pl.col("crawled_at"))
+            .alias("crawled_at")
+        )
+
+        # Chốt chặn cuối cùng: Điền mốc thời gian mặc định nếu vẫn còn sót Null
+        df_raw = df_raw.with_columns(
+            pl.col("crawled_at").fill_null(datetime(2026, 9, 14, 0, 0, 0))
+        )
 
         print(f"Đã nạp và lọc sơ bộ {df_raw.height} records hợp lệ từ Data Lake.")
     except Exception as e:
