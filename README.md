@@ -26,9 +26,9 @@ Subsequently, the project trains Machine Learning models to predict viral potent
 
 ## RESEARCH HYPOTHESIS
 ### RQ1: Timing (Publishing Time)
-* **Research Question:** Does publishing a video during peak hours (18:00 - 22:00) significantly impact the speed at which it appears on the Trending tab compared to other time slots?
-  * **$H_0$:** Null Hypothesis: The time of posting a video (prime hours 6 PM-10 PM compared to other times) does not significantly affect how quickly the video appears on the Trending tab.
-  * **$H_1$:** Alternative Hypothesis: Posting a video during prime hours (6 PM-10 PM) has a positive effect, helping the video appear on the Trending tab faster than posting at other times of the day. 
+* **Research Question:** How does publishing a video during business hours (8:00 - 17:00) versus rest hours (17:00 - 8:00) impact the speed at which it appears on the Trending tab?
+  * **$H_0$:** Null Hypothesis: There is no significant difference in the speed of appearing on the Trending tab between videos published during business hours and those published during rest hours.
+  * **$H_1$:** Alternative Hypothesis: Publishing a video during rest hours significantly accelerates its appearance on the Trending tab compared to business hours.
  
 ### RQ2: Engagement & Sentiment (Negative Interactions)
 * **Research Question:** Do negative comments and high dislike rates reduce a video's virality and shorten its retention time on the Trending tab?
