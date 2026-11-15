@@ -3,6 +3,7 @@ import sys
 import random
 from datetime import datetime, timedelta
 import re
+import numpy as np  # TUI THÊM THƯ VIỆN NÀY ĐỂ RANDOM SIÊU TỐC BẰNG MA TRẬN
 
 # ==========================================
 # 1. CẤU HÌNH KẾT NỐI
@@ -14,36 +15,16 @@ MINIO_STORAGE_OPTIONS = {
     "aws_region": "us-east-1"
 }
 
-
 MINIO_DATA_PATH = "s3://youtube-raw/**/*.parquet"
 PG_URI = "postgresql://postgres:linhqn1234@100.95.205.7:5432/youtube_analytics"
 
-
-# ==========================================
-# HÀM MÔ PHỎNG THỜI GIAN CRAWL THEO LOGIC CỦA NHÓM
-# ==========================================
-def simulate_crawled_at(pub_date):
-    if pub_date is None:
-        return datetime.now()
-        
-    cutoff = datetime(2026, 9, 14)
-    
-    if pub_date < cutoff:
-        # Nếu publish trước 14/9: Giả lập thời gian cào bắt đầu từ 14/9 trở đi
-        days_offset = random.randint(0, 14)
-        hours_offset = random.randint(0, 23)
-        mins_offset = random.randint(0, 59)
-        return cutoff + timedelta(days=days_offset, hours=hours_offset, minutes=mins_offset)
-    else:
-        # Nếu publish từ 14/9 trở về sau: Thời gian cào sau lúc đăng từ 2h đến 72h
-        hours_offset = random.randint(2, 72)
-        mins_offset = random.randint(0, 59)
-        return pub_date + timedelta(hours=hours_offset, minutes=mins_offset)
+# Đã xóa hàm Python simulate_crawled_at cũ vì nó gây treo máy (bottleneck)
 
 def load_all_parquets():
     """
     Nạp dữ liệu mượt mà bằng s3fs, dùng diagonal concat để vá schema bị lệch.
-    Đã bổ sung bộ lọc "tẩy" Timezone và rút trích mã Region trực tiếp từ đường dẫn file.
+    Đã bổ sung bộ lọc "tẩy" Timezone, rút trích mã Region trực tiếp từ đường dẫn file,
+    Và thêm log theo dõi tiến độ.
     """
     try:
         import s3fs
@@ -60,7 +41,14 @@ def load_all_parquets():
             raise ValueError("Không tìm thấy file parquet nào trong bucket!")
             
         dfs = []
-        for file_path in file_list:
+        total_files = len(file_list)
+        print(f"-> Tìm thấy {total_files} file Parquet. Bắt đầu đọc dữ liệu...")
+        
+        for i, file_path in enumerate(file_list):
+            # In tiến độ sau mỗi 20 file để màn hình không bị "đứng yên"
+            if i % 20 == 0 and i > 0:
+                print(f"   ... Đã đọc {i}/{total_files} files ...")
+                
             try:
                 # 1. ĐỌC FILE LÊN TRƯỚC
                 df_single = pl.read_parquet(
@@ -73,7 +61,6 @@ def load_all_parquets():
                 match = re.search(r'/([A-Z]{2})/', file_path)
                 if match:
                     real_region = match.group(1)
-                    # Gán giá trị region (US, GB, BR...) vào Dataframe vừa đọc
                     df_single = df_single.with_columns(pl.lit(real_region).alias("region"))
                 
                 # 3. TẨY MÚI GIỜ (TIMEZONE) CHO TẤT CẢ CỘT DATETIME
@@ -85,11 +72,12 @@ def load_all_parquets():
                         
                 dfs.append(df_single)
             except Exception as e:
-                print(f"Bỏ qua file lỗi {file_path}: {e}")
+                print(f"   [Cảnh báo] Bỏ qua file lỗi {file_path}: {e}")
                 
         if not dfs:
             raise ValueError("Không có dữ liệu hợp lệ nào được đọc!")
             
+        print("-> Gom (Concat) tất cả các file lại thành 1 bảng duy nhất...")
         return pl.concat(dfs, how="diagonal_relaxed")
         
     except Exception as e:
@@ -150,7 +138,6 @@ def main():
         if "category_name" not in df_raw.columns:
             df_raw = df_raw.with_columns(pl.lit(None).cast(pl.Utf8).alias("category_name"))
 
-        # Điền tên danh mục vào những chỗ còn trống (NULL) bằng cách dịch từ category_id
         if "category_id" in df_raw.columns:
             df_raw = df_raw.with_columns(
                 pl.when(pl.col("category_name").is_null() | (pl.col("category_name") == "Unknown"))
@@ -159,13 +146,12 @@ def main():
                 .alias("category_name")
             )
             
-        # Ép gộp về 6 nhóm chính cho tất cả các file
         df_raw = df_raw.with_columns(
             pl.col("category_name").replace(GROUPING_LOGIC).fill_null("Unknown")
         )
 
         # ==========================================
-        # 3. FIX CỨNG THỂ LOẠI BẰNG TỪ KHÓA (Keyword Override)
+        # 3. FIX CỨNG THỂ LOẠI BẰNG TỪ KHÓA
         # ==========================================
         if "title" in df_raw.columns:
             df_raw = df_raw.with_columns(
@@ -189,7 +175,7 @@ def main():
                 df_raw = df_raw.with_columns(pl.col(col).fill_null(default_val))
 
         # ==========================================
-        # 5. XỬ LÝ CRAWLED_AT DỰA TRÊN NGÀY PUBLISH
+        # 5. XỬ LÝ CRAWLED_AT BẰNG VECTORIZATION (TỐC ĐỘ BÀN THỜ)
         # ==========================================
         if "crawled_at" not in df_raw.columns:
             df_raw = df_raw.with_columns(pl.lit(None).cast(pl.Datetime).alias("crawled_at"))
@@ -202,13 +188,37 @@ def main():
                 ]).alias("crawled_at")
             )
 
-        # BẮT BUỘC skip_nulls=False để ép Polars chạy hàm simulate ngay cả khi publish_at bị NULL
+        # --- BẮT ĐẦU FIX LỖI TREO MÁY Ở ĐÂY ---
+        print("-> Đang vá lỗi cột crawled_at (NULL) bằng thuật toán Vectorized...")
+        N = df_raw.height
+        cutoff = datetime(2026, 9, 14)
+        
+        # 5.1. Tạo mảng Numpy random bù giờ cho toàn bộ file cùng 1 lúc (chỉ mất ~0.01 giây)
+        # offset_pre: 0 đến 14 ngày (tính bằng phút)
+        # offset_post: 2h đến 72h (tính bằng phút)
+        df_raw = df_raw.with_columns([
+            pl.Series("offset_pre", np.random.randint(0, 14*24*60, size=N)),
+            pl.Series("offset_post", np.random.randint(120, 72*60, size=N))
+        ])
+
+        # 5.2. Tính toán mô phỏng crawled_at không dùng hàm map_elements
+        df_raw = df_raw.with_columns(
+            pl.when(pl.col("publish_at").is_null())
+            .then(pl.lit(datetime.now()))
+            .when(pl.col("publish_at") < cutoff)
+            .then(pl.lit(cutoff) + pl.duration(minutes=pl.col("offset_pre")))
+            .otherwise(pl.col("publish_at") + pl.duration(minutes=pl.col("offset_post")))
+            .alias("simulated_crawled_at")
+        )
+
+        # 5.3. Đắp cái vừa mô phỏng vào những ô bị Null của crawled_at gốc và xóa cột tạm
         df_raw = df_raw.with_columns(
             pl.when(pl.col("crawled_at").is_null())
-            .then(pl.col("publish_at").map_elements(simulate_crawled_at, return_dtype=pl.Datetime, skip_nulls=False))
+            .then(pl.col("simulated_crawled_at"))
             .otherwise(pl.col("crawled_at"))
             .alias("crawled_at")
-        )
+        ).drop(["offset_pre", "offset_post", "simulated_crawled_at"])
+        # --- KẾT THÚC FIX ---
 
         # Chốt chặn cuối cùng: Điền mốc thời gian mặc định nếu vẫn còn sót Null
         df_raw = df_raw.with_columns(
@@ -222,7 +232,6 @@ def main():
 
     print("\nBƯỚC 2: TÁCH VÀ XỬ LÝ BẢNG DIMENSION (dim_video)...")
     
-    # Kiểm tra xem time_block có tồn tại không trước khi select
     dim_cols = ["video_id", "title", "category_name", "channel_title", "channel_id", "region", "publish_at"]
     if "time_block" in df_raw.columns:
         dim_cols.append("time_block")
@@ -239,7 +248,6 @@ def main():
     print(f"Chuẩn bị nạp {df_dim_new.height} videos mới vào dim_video.")
 
     print("\nBƯỚC 3: TÁCH VÀ XỬ LÝ BẢNG FACT (fact_youtube_metrics)...")
-    # Lấy luôn cột is_trending từ data gốc, nếu file nào lỡ thiếu thì mặc định là False
     if "is_trending" not in df_raw.columns:
         df_raw = df_raw.with_columns(pl.lit(False).alias("is_trending"))
     else:
