@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: youtube-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: youtube_analysis
+      POSTGRES_USER: youtube_user
+      POSTGRES_PASSWORD: youtube_pass
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
